@@ -4,6 +4,7 @@
 import streamlit as st
 
 import config
+from rag import exam
 from rag.chain import build_rag_chain, retrieve_sources
 from rag.loader import load_documents, split_documents
 from rag.vectorstore import build_vectorstore
@@ -262,9 +263,11 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-# ── 主对话区 ──────────────────────────────────────────────────────────
+# ── 主功能区:提问 / 考点预测 ──────────────────────────────────────────
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "exam_report" not in st.session_state:
+    st.session_state.exam_report = None
 
 if not has_vectorstore():
     st.warning(
@@ -272,21 +275,53 @@ if not has_vectorstore():
         "也可以直接用项目自带的《计算机网络》示例课件,点构建按钮即可体验。"
     )
 
-if not st.session_state.messages:
-    # 苏老师主动发问,以对话开启教学
-    st.markdown("**苏老师给你留了三张问题卡,点一张,马上开讲 👇**")
-    cols = st.columns(len(SUGGESTIONS))
-    for col, (label, full_question) in zip(cols, SUGGESTIONS):
-        if col.button(label, use_container_width=True):
-            ask(full_question)
-            st.rerun()
+tab_chat, tab_exam = st.tabs(["💬 问苏老师", "📝 期末考点预测"])
 
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar="🧑‍🎓" if msg["role"] == "user" else "👩‍🏫"):
-        st.markdown(msg["content"])
-        if msg["role"] == "assistant" and msg.get("sources"):
-            st.caption("📎 引用来源:" + "、".join(msg["sources"]))
+with tab_chat:
+    if not st.session_state.messages:
+        # 苏老师主动发问,以对话开启教学
+        st.markdown("**苏老师给你留了三张问题卡,点一张,马上开讲 👇**")
+        cols = st.columns(len(SUGGESTIONS))
+        for col, (label, full_question) in zip(cols, SUGGESTIONS):
+            if col.button(label, use_container_width=True):
+                ask(full_question)
+                st.rerun()
 
-question = st.chat_input("同学,今天想问苏老师点什么?")
-if question:
-    ask(question)
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"], avatar="🧑‍🎓" if msg["role"] == "user" else "👩‍🏫"):
+            st.markdown(msg["content"])
+            if msg["role"] == "assistant" and msg.get("sources"):
+                st.caption("📎 引用来源:" + "、".join(msg["sources"]))
+
+    question = st.chat_input("同学,今天想问苏老师点什么?")
+    if question:
+        ask(question)
+
+with tab_exam:
+    st.markdown(
+        "把你们学校的课件喂给苏老师(左侧「苏老师的资料柜」),再告诉她期末考什么题型,"
+        "她就逐章分析考点,给你一份能直接照着复习的预测报告 📋"
+    )
+    types = st.multiselect(
+        "你们期末考哪些题型?", exam.COMMON_TYPES, default=["选择题", "简答题", "计算题"]
+    )
+    extra = st.text_area(
+        "补充说明(可选):考试范围、分值结构、你们专业的侧重等",
+        placeholder="例:重点考第 3 章和第 5 章;大题偏计算",
+    )
+    if st.button("🔍 生成考点预测报告", type="primary", disabled=not (types and has_vectorstore())):
+        try:
+            with st.status("苏老师正在逐章分析课件,课件越多需要越久…", expanded=True) as status:
+                report = exam.run_prediction(types, extra, progress_cb=lambda m: st.write(m))
+                status.update(label="✅ 报告生成完毕,下面就是(也可下载保存)", state="complete")
+            st.session_state.exam_report = report
+        except Exception as e:
+            st.error(f"生成失败,请检查 .env 中的 DEEPSEEK_API_KEY 是否有效:{e}")
+    if st.session_state.exam_report:
+        st.markdown(st.session_state.exam_report)
+        st.download_button(
+            "⬇️ 下载完整报告(.md)",
+            data=st.session_state.exam_report,
+            file_name="期末考点预测报告.md",
+            mime="text/markdown",
+        )
