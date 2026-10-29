@@ -1,4 +1,4 @@
-"""课程知识库问答助手 - 「小课」私人助教界面
+"""课程知识库问答助手 - 「苏老师」私人助教界面(黑板粉笔风)
 运行: streamlit run app.py
 """
 import streamlit as st
@@ -8,68 +8,101 @@ from rag.chain import build_rag_chain, retrieve_sources
 from rag.loader import load_documents, split_documents
 from rag.vectorstore import build_vectorstore
 
-st.set_page_config(page_title="小课 · 你的私人课程助教", page_icon="🦉", layout="centered")
+st.set_page_config(page_title="苏老师 · 你的私人课程助教", page_icon="🎓", layout="centered")
 
-# ── 吉祥物「小课」:戴学士帽的猫头鹰(SVG 手绘,无外部依赖)──────────────
-OWL_SVG = """<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-  <ellipse cx="24" cy="74" rx="9" ry="21" fill="#4A6AA5"/>
-  <ellipse cx="96" cy="74" rx="9" ry="21" fill="#4A6AA5"/>
-  <ellipse cx="60" cy="72" rx="38" ry="42" fill="#5B7DB1"/>
-  <ellipse cx="60" cy="84" rx="24" ry="26" fill="#EAF1FB"/>
-  <circle cx="46" cy="60" r="14" fill="#FFFFFF"/>
-  <circle cx="74" cy="60" r="14" fill="#FFFFFF"/>
-  <circle cx="47" cy="61" r="6" fill="#2B3A55"/>
-  <circle cx="73" cy="61" r="6" fill="#2B3A55"/>
-  <circle cx="49" cy="59" r="2" fill="#FFFFFF"/>
-  <circle cx="75" cy="59" r="2" fill="#FFFFFF"/>
-  <polygon points="60,68 53,77 67,77" fill="#F4A259"/>
-  <polygon points="60,14 94,29 60,37 26,29" fill="#39476B"/>
-  <rect x="36" y="27" width="48" height="7" rx="3" fill="#2B3A55"/>
-  <line x1="90" y1="31" x2="90" y2="44" stroke="#F4A259" stroke-width="2.5"/>
-  <circle cx="90" cy="47" r="3.2" fill="#F4A259"/>
+# ── 人物形象「苏老师」:盘发、圆框眼镜、深绿西装、手持教材(SVG 手绘,无外部依赖)──
+TEACHER_SVG = """<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg">
+  <path d="M58 210 L63 148 Q68 118 100 118 Q132 118 137 148 L142 210 Z" fill="#2F5D50"/>
+  <path d="M86 120 L100 152 L114 120 Q107 116 100 116 Q93 116 86 120 Z" fill="#F5F1E6"/>
+  <path d="M86 120 L100 152 L92 154 L80 128 Z" fill="#274C42"/>
+  <path d="M114 120 L100 152 L108 154 L120 128 Z" fill="#274C42"/>
+  <circle cx="100" cy="160" r="4" fill="#E8B04B"/>
+  <g transform="rotate(-8 70 182)">
+    <rect x="44" y="168" width="48" height="30" rx="4" fill="#D9A03F"/>
+    <rect x="48" y="172" width="40" height="22" rx="2" fill="#FDF8EC"/>
+    <line x1="68" y1="172" x2="68" y2="194" stroke="#D9C48E" stroke-width="2"/>
+  </g>
+  <circle cx="100" cy="60" r="40" fill="#5A4634"/>
+  <circle cx="70" cy="84" r="12" fill="#5A4634"/>
+  <circle cx="130" cy="84" r="12" fill="#5A4634"/>
+  <circle cx="100" cy="16" r="15" fill="#5A4634"/>
+  <circle cx="100" cy="16" r="8" fill="#6E5743"/>
+  <circle cx="100" cy="72" r="31" fill="#FFD9B3"/>
+  <path d="M69 66 Q74 40 100 40 Q126 40 131 66 Q116 52 100 54 Q84 52 69 66 Z" fill="#5A4634"/>
+  <circle cx="87" cy="74" r="10.5" fill="#FFFFFF" fill-opacity=".35" stroke="#2B3A55" stroke-width="2.5"/>
+  <circle cx="113" cy="74" r="10.5" fill="#FFFFFF" fill-opacity=".35" stroke="#2B3A55" stroke-width="2.5"/>
+  <line x1="97.5" y1="74" x2="102.5" y2="74" stroke="#2B3A55" stroke-width="2.5"/>
+  <circle cx="87" cy="74" r="3" fill="#2B3A55"/>
+  <circle cx="113" cy="74" r="3" fill="#2B3A55"/>
+  <path d="M92 90 Q100 97 108 90" stroke="#C97B5A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <ellipse cx="79" cy="85" rx="4.5" ry="2.8" fill="#FFB3A7" opacity=".8"/>
+  <ellipse cx="121" cy="85" rx="4.5" ry="2.8" fill="#FFB3A7" opacity=".8"/>
 </svg>"""
 
 CUSTOM_CSS = """<style>
-.block-container { padding-top: 1.4rem; max-width: 860px; }
-.hero { display: flex; align-items: center; gap: 22px;
-        background: linear-gradient(135deg, #4F6DF5 0%, #7B5CF0 100%);
-        border-radius: 22px; padding: 24px 30px; color: #fff;
-        margin-bottom: 20px; box-shadow: 0 8px 22px rgba(79,109,245,.28); }
-.hero-avatar { width: 88px; height: 88px; background: #fff; border-radius: 50%;
-               padding: 9px; flex-shrink: 0; box-shadow: 0 3px 10px rgba(0,0,0,.18); }
-.hero-avatar svg { width: 100%; height: 100%; display: block; }
-.hero-title { font-size: 1.4rem; font-weight: 700; letter-spacing: .5px; }
-.hero-sub { font-size: .95rem; opacity: .93; margin-top: 7px; }
-[data-testid="stChatMessage"] { border-radius: 16px; padding: 12px 16px;
-        background: #FFFFFF; border: 1px solid #EEF0F6;
-        box-shadow: 0 1px 6px rgba(30,40,80,.07); }
+.block-container { padding-top: 1.4rem; max-width: 900px; }
+
+/* ── 黑板首页 ── */
+.board { background: linear-gradient(160deg, #33604F 0%, #24463B 100%);
+        border: 10px solid #8B5E3C; border-radius: 16px;
+        padding: 26px 30px; color: #F7F3E8;
+        box-shadow: 0 10px 26px rgba(36,70,59,.35), inset 0 0 70px rgba(0,0,0,.25); }
+.board-inner { display: flex; gap: 28px; align-items: center; }
+.board-char { width: 168px; flex-shrink: 0; filter: drop-shadow(0 5px 10px rgba(0,0,0,.35)); }
+.board-char svg { width: 100%; height: auto; display: block; }
+.board-hello { font-family: "KaiTi","STKaiti","楷体",serif;
+        font-size: 1.75rem; font-weight: 700; letter-spacing: 2px; }
+.board-msg { font-family: "KaiTi","STKaiti","楷体",serif;
+        font-size: 1.1rem; line-height: 1.8; margin-top: 8px; color: #EFE9D8; }
+.board-msg strong { color: #FFD98E; }
+.board-msg em { color: #FFD98E; font-style: normal; border-bottom: 2px dashed #FFD98E; }
+.board-tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.board-tags span { font-size: .85rem; border: 1.5px dashed rgba(255,255,255,.55);
+        border-radius: 999px; padding: 3px 13px; color: #F1EBDB; }
+
+/* ── 特性小条 ── */
+.feature-strip { display: flex; justify-content: center; gap: 26px; flex-wrap: wrap;
+        margin: 14px 0 4px; font-size: .9rem; color: #6B7280; }
+
+/* ── 聊天气泡 ── */
+[data-testid="stChatMessage"] { border-radius: 14px; padding: 12px 16px;
+        background: #FFFFFF; border: 1px solid #E9E4D8;
+        box-shadow: 0 1px 6px rgba(90,70,52,.08); }
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
-        background: #EDF1FF; border-color: #DCE3FF; }
-[data-testid="stSidebar"] { background: #F7F8FC; }
-[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { font-size: .92rem; }
+        background: #FFF6DE; border: 1.5px dashed #E4C878; }
+
+/* ── 侧边栏 ── */
+[data-testid="stSidebar"] { background: #FBF7EF; }
+.side-mascot { display: flex; align-items: center; gap: 12px; background: #fff;
+        border-radius: 16px; padding: 12px; border: 1px solid #EADFC8; margin-bottom: 14px;
+        box-shadow: 0 2px 8px rgba(90,70,52,.06); }
+.side-mascot svg { width: 54px; height: 54px; flex-shrink: 0; }
+.side-mascot .t { font-weight: 700; font-size: .98rem; color: #2F5D50; }
+.side-mascot .s { font-size: .8rem; color: #8A8171; }
+
+/* ── 按钮主题 ── */
 button[kind="primary"], [data-testid="stBaseButton-primary"] {
-        background: linear-gradient(135deg, #4F6DF5, #7B5CF0); border: none; color: #fff; }
-button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover { filter: brightness(1.1); }
-.side-mascot { display: flex; align-items: center; gap: 12px;
-        background: #fff; border-radius: 16px; padding: 12px;
-        border: 1px solid #EEF0F6; margin-bottom: 14px; }
-.side-mascot svg { width: 52px; height: 52px; flex-shrink: 0; }
-.side-mascot .t { font-weight: 700; font-size: .98rem; color: #2B3A55; }
-.side-mascot .s { font-size: .8rem; color: #7A8599; }
+        background: linear-gradient(135deg, #2F5D50, #3C7A66); border: none; color: #fff; }
+button[kind="primary"]:hover, [data-testid="stBaseButton-primary"]:hover { filter: brightness(1.12); }
 footer { visibility: hidden; }
 </style>"""
 
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
+# ── 黑板首页:苏老师进入系统即打招呼 ──
 st.markdown(
     f"""
-<div class="hero">
-  <div class="hero-avatar">{OWL_SVG}</div>
-  <div>
-    <div class="hero-title">嗨,我是小课,你的私人课程助教 🦉</div>
-    <div class="hero-sub">课件我已通读完毕 · 随时开问 · 每句回答都出自你的资料,并附引用出处</div>
+<div class="board">
+  <div class="board-inner">
+    <div class="board-char">{TEACHER_SVG}</div>
+    <div>
+      <div class="board-hello">同学,你好呀 👋</div>
+      <div class="board-msg">我是<strong>苏老师</strong>,教了十几年《计算机网络》。你的课件我已经通读完毕,哪里是重点、哪里爱出题,我一清二楚。尽管问——<em>答不上来算我输</em>,但说好了,答完要回去翻课件复习哦 😊</div>
+      <div class="board-tags"><span>耐心指数 ★★★★★</span><span>幽默感 ●●●●○</span><span>划重点 从不手软</span><span>口头禅:「翻课件!」</span></div>
+    </div>
   </div>
 </div>
+<div class="feature-strip"><span>🔒 课件本地建库</span><span>📎 句句有出处</span><span>🚫 资料外不瞎编</span></div>
 """,
     unsafe_allow_html=True,
 )
@@ -77,9 +110,9 @@ st.markdown(
 SUPPORTED = {".pdf", ".txt", ".md"}
 
 SUGGESTIONS = [
-    ("什么是三次握手?", "什么是三次握手?为什么需要三次而不是两次?"),
-    ("TCP vs UDP 区别", "TCP 和 UDP 有什么区别?"),
-    ("交换机自学习原理", "以太网交换机是如何自学习的?"),
+    ("📖 什么是三次握手?", "什么是三次握手?为什么需要三次而不是两次?"),
+    ("🔍 TCP 和 UDP 怎么选?", "TCP 和 UDP 有什么区别?"),
+    ("✏️ 交换机自学习", "以太网交换机是如何自学习的?"),
 ]
 
 
@@ -93,7 +126,7 @@ def has_vectorstore() -> bool:
     return (config.VECTOR_DIR / "index.faiss").exists()
 
 
-@st.cache_resource(show_spinner="小课正在翻开课件…")
+@st.cache_resource(show_spinner="苏老师正在翻开课件…")
 def get_chain():
     return build_rag_chain()
 
@@ -103,9 +136,9 @@ def ask(question: str):
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user", avatar="🧑‍🎓"):
         st.markdown(question)
-    with st.chat_message("assistant", avatar="🦉"):
+    with st.chat_message("assistant", avatar="👩‍🏫"):
         try:
-            with st.spinner("小课正在翻课件找答案…"):
+            with st.spinner("苏老师正在翻课件找答案…"):
                 answer = get_chain().invoke(question)
                 sources = retrieve_sources(question)
             st.markdown(answer)
@@ -119,11 +152,11 @@ def ask(question: str):
             st.error(f"调用失败,请检查 .env 中的 DEEPSEEK_API_KEY 是否有效:{e}")
 
 
-# ── 侧边栏:小课的知识库管理 ────────────────────────────────────────────
+# ── 侧边栏:苏老师的资料柜 ────────────────────────────────────────────
 with st.sidebar:
     st.markdown(
-        f"""<div class="side-mascot">{OWL_SVG}
-        <div><div class="t">小课的知识库</div><div class="s">上传课件喂养我</div></div></div>""",
+        f"""<div class="side-mascot">{TEACHER_SVG}
+        <div><div class="t">苏老师的资料柜</div><div class="s">喂我课件,才有力气回答</div></div></div>""",
         unsafe_allow_html=True,
     )
 
@@ -169,25 +202,20 @@ if not has_vectorstore():
     )
 
 if not st.session_state.messages:
-    # 小课主动开口,以对话开启教学
-    with st.chat_message("assistant", avatar="🦉"):
-        st.markdown(
-            "嗨!我是**小课** 🦉 你这门课的专属助教。\n\n"
-            "课件我已经通读完了,你只管问——我保证:每句话都出自课件原文,资料里没有的我会直说,绝不瞎编。\n\n"
-            "**不知道从哪开始?点一个话题,我马上开讲 👇**"
-        )
-        cols = st.columns(len(SUGGESTIONS))
-        for col, (label, full_question) in zip(cols, SUGGESTIONS):
-            if col.button(label, use_container_width=True):
-                ask(full_question)
-                st.rerun()
+    # 苏老师主动发问,以对话开启教学
+    st.markdown("**苏老师给你留了三张问题卡,点一张,马上开讲 👇**")
+    cols = st.columns(len(SUGGESTIONS))
+    for col, (label, full_question) in zip(cols, SUGGESTIONS):
+        if col.button(label, use_container_width=True):
+            ask(full_question)
+            st.rerun()
 
 for msg in st.session_state.messages:
-    with st.chat_message(msg["role"], avatar="🧑‍🎓" if msg["role"] == "user" else "🦉"):
+    with st.chat_message(msg["role"], avatar="🧑‍🎓" if msg["role"] == "user" else "👩‍🏫"):
         st.markdown(msg["content"])
         if msg["role"] == "assistant" and msg.get("sources"):
             st.caption("📎 引用来源:" + "、".join(msg["sources"]))
 
-question = st.chat_input("向小课提问,例如:什么是滑动窗口协议?")
+question = st.chat_input("同学,今天想问苏老师点什么?")
 if question:
     ask(question)
