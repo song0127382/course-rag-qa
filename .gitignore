@@ -1,0 +1,15 @@
+# 密钥与本地配置
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 向量库缓存(可由 ingest.py 重新生成)
+data/vectorstore/
+
+# 系统文件
+.DS_Store
+Thumbs.db
