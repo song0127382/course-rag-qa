@@ -10,46 +10,114 @@ from rag.vectorstore import build_vectorstore
 
 st.set_page_config(page_title="苏老师 · 你的私人课程助教", page_icon="🎓", layout="centered")
 
-# ── 人物形象「苏老师」:盘发、圆框眼镜、深绿西装、手持教材(SVG 手绘,无外部依赖)──
-TEACHER_SVG = """<svg viewBox="0 0 200 210" xmlns="http://www.w3.org/2000/svg">
-  <path d="M58 210 L63 148 Q68 118 100 118 Q132 118 137 148 L142 210 Z" fill="#2F5D50"/>
-  <path d="M86 120 L100 152 L114 120 Q107 116 100 116 Q93 116 86 120 Z" fill="#F5F1E6"/>
-  <path d="M86 120 L100 152 L92 154 L80 128 Z" fill="#274C42"/>
-  <path d="M114 120 L100 152 L108 154 L120 128 Z" fill="#274C42"/>
-  <circle cx="100" cy="160" r="4" fill="#E8B04B"/>
-  <g transform="rotate(-8 70 182)">
-    <rect x="44" y="168" width="48" height="30" rx="4" fill="#D9A03F"/>
-    <rect x="48" y="172" width="40" height="22" rx="2" fill="#FDF8EC"/>
-    <line x1="68" y1="172" x2="68" y2="194" stroke="#D9C48E" stroke-width="2"/>
+# ── 人物形象「苏老师」:挥粉笔打招呼、发髻别铅笔、臂弯夹课本(SVG 手绘 + CSS 动画)──
+TEACHER_SVG = """<svg viewBox="0 0 250 270" xmlns="http://www.w3.org/2000/svg">
+  <!-- 西装身体 -->
+  <path d="M62 262 L68 196 Q74 158 112 158 Q150 158 156 196 L162 262 Z" fill="#3E7263"/>
+  <path d="M96 162 L112 196 L128 162 Q120 156 112 156 Q104 156 96 162 Z" fill="#F7F2E7"/>
+  <path d="M96 162 L112 196 L102 199 L88 170 Z" fill="#33604F"/>
+  <path d="M128 162 L112 196 L122 199 L136 170 Z" fill="#33604F"/>
+  <circle cx="112" cy="206" r="4.5" fill="#E8B04B"/>
+  <circle cx="112" cy="224" r="4" fill="#E8B04B"/>
+  <!-- 左臂:臂弯夹课本 -->
+  <path d="M76 172 Q60 188 57 208 L74 213 Q79 194 90 184 Z" fill="#33604F"/>
+  <circle cx="67" cy="216" r="10" fill="#F8C9A0"/>
+  <g transform="rotate(-10 56 206)">
+    <rect x="28" y="190" width="54" height="34" rx="4" fill="#D9A03F"/>
+    <rect x="32" y="194" width="46" height="26" rx="2" fill="#FDF8EC"/>
+    <line x1="55" y1="194" x2="55" y2="220" stroke="#D9C48E" stroke-width="2"/>
+    <path d="M38 200 h13 M38 206 h13" stroke="#C9B78C" stroke-width="2" stroke-linecap="round"/>
+    <path d="M60 200 h12 M60 206 h12" stroke="#C9B78C" stroke-width="2" stroke-linecap="round"/>
   </g>
-  <circle cx="100" cy="60" r="40" fill="#5A4634"/>
-  <circle cx="70" cy="84" r="12" fill="#5A4634"/>
-  <circle cx="130" cy="84" r="12" fill="#5A4634"/>
-  <circle cx="100" cy="16" r="15" fill="#5A4634"/>
-  <circle cx="100" cy="16" r="8" fill="#6E5743"/>
-  <circle cx="100" cy="72" r="31" fill="#FFD9B3"/>
-  <path d="M69 66 Q74 40 100 40 Q126 40 131 66 Q116 52 100 54 Q84 52 69 66 Z" fill="#5A4634"/>
-  <circle cx="87" cy="74" r="10.5" fill="#FFFFFF" fill-opacity=".35" stroke="#2B3A55" stroke-width="2.5"/>
-  <circle cx="113" cy="74" r="10.5" fill="#FFFFFF" fill-opacity=".35" stroke="#2B3A55" stroke-width="2.5"/>
-  <line x1="97.5" y1="74" x2="102.5" y2="74" stroke="#2B3A55" stroke-width="2.5"/>
-  <circle cx="87" cy="74" r="3" fill="#2B3A55"/>
-  <circle cx="113" cy="74" r="3" fill="#2B3A55"/>
-  <path d="M92 90 Q100 97 108 90" stroke="#C97B5A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <ellipse cx="79" cy="85" rx="4.5" ry="2.8" fill="#FFB3A7" opacity=".8"/>
-  <ellipse cx="121" cy="85" rx="4.5" ry="2.8" fill="#FFB3A7" opacity=".8"/>
+  <!-- 右臂:扬起挥手(会动) -->
+  <g class="wave-arm">
+    <path d="M138 170 Q170 160 188 130 L204 141 Q186 174 152 186 Z" fill="#33604F"/>
+    <circle cx="198" cy="124" r="12" fill="#F8C9A0"/>
+    <g transform="rotate(-28 198 116)">
+      <rect x="193" y="102" width="9" height="20" rx="2.5" fill="#FFFFFF" stroke="#DDD6C6" stroke-width="1.5"/>
+    </g>
+    <path d="M176 96 q-7 11 -1 22" stroke="rgba(255,255,255,.6)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M167 102 q-5 8 -1 16" stroke="rgba(255,255,255,.4)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- 脖子与后发 -->
+  <rect x="104" y="140" width="16" height="18" rx="6" fill="#F8C9A0"/>
+  <circle cx="112" cy="96" r="52" fill="#6B4F3A"/>
+  <circle cx="66" cy="120" r="14" fill="#6B4F3A"/>
+  <circle cx="158" cy="120" r="14" fill="#6B4F3A"/>
+  <path d="M158 132 q11 14 3 27" stroke="#6B4F3A" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <!-- 发髻与铅笔 -->
+  <circle cx="112" cy="34" r="18" fill="#6B4F3A"/>
+  <rect x="97" y="46" width="30" height="6" rx="3" fill="#E8B04B"/>
+  <g transform="rotate(24 132 30)">
+    <rect x="118" y="27" width="42" height="6" rx="2" fill="#E8B04B"/>
+    <polygon points="160,27 169,30 160,33" fill="#4A3B2F"/>
+    <rect x="113" y="27" width="7" height="6" rx="2" fill="#E88B8B"/>
+  </g>
+  <!-- 脸 -->
+  <ellipse cx="112" cy="104" rx="37" ry="35" fill="#F8C9A0"/>
+  <path d="M75 96 Q80 62 112 62 Q144 62 149 96 Q132 74 112 77 Q92 74 75 96 Z" fill="#6B4F3A"/>
+  <!-- 眉毛与圆框眼镜 -->
+  <path d="M85 93 q8 -5 17 -1" stroke="#6B4F3A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M122 92 q8 -4 16 1" stroke="#6B4F3A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="94" cy="108" r="11.5" fill="#FFFFFF" fill-opacity=".25" stroke="#4A3B2F" stroke-width="2.6"/>
+  <circle cx="130" cy="108" r="11.5" fill="#FFFFFF" fill-opacity=".25" stroke="#4A3B2F" stroke-width="2.6"/>
+  <line x1="105.5" y1="108" x2="118.5" y2="108" stroke="#4A3B2F" stroke-width="2.6"/>
+  <line x1="82.5" y1="107" x2="76" y2="103" stroke="#4A3B2F" stroke-width="2.6"/>
+  <line x1="141.5" y1="107" x2="148" y2="103" stroke="#4A3B2F" stroke-width="2.6"/>
+  <!-- 笑成弯月的眼睛 -->
+  <path d="M88 110 q6 -7 12 0" stroke="#4A3B2F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M124 110 q6 -7 12 0" stroke="#4A3B2F" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 微笑与腮红 -->
+  <path d="M102 127 Q112 137 122 127" stroke="#C97B5A" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <ellipse cx="81" cy="121" rx="6" ry="3.5" fill="#F5A08C" opacity=".55"/>
+  <ellipse cx="143" cy="121" rx="6" ry="3.5" fill="#F5A08C" opacity=".55"/>
+</svg>"""
+
+# ── 黑板角落的粉笔涂鸦:网络拓扑(左上)、地球仪与星星(右下)──
+DOODLE_TL = """<svg viewBox="0 0 130 95" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="rgba(255,255,255,.42)" stroke-width="2" fill="rgba(255,255,255,.12)">
+    <line x1="22" y1="22" x2="62" y2="14"/><line x1="62" y1="14" x2="102" y2="30"/>
+    <line x1="22" y1="22" x2="48" y2="62"/><line x1="102" y1="30" x2="88" y2="66"/>
+    <line x1="48" y1="62" x2="88" y2="66"/><line x1="62" y1="14" x2="48" y2="62"/>
+    <circle cx="22" cy="22" r="8"/><circle cx="62" cy="14" r="8"/><circle cx="102" cy="30" r="8"/>
+    <circle cx="48" cy="62" r="8"/><circle cx="88" cy="66" r="8"/>
+  </g>
+  <path d="M30 21 h18" stroke="rgba(255,255,255,.75)" stroke-width="2.5" stroke-dasharray="4 4"/>
+</svg>"""
+
+DOODLE_BR = """<svg viewBox="0 0 150 110" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="rgba(255,255,255,.45)" stroke-width="2" fill="none">
+    <circle cx="34" cy="74" r="16"/>
+    <ellipse cx="34" cy="74" rx="16" ry="6"/>
+    <ellipse cx="34" cy="74" rx="6" ry="16"/>
+  </g>
+  <path class="tw1" d="M84 22 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" fill="rgba(255,255,255,.7)"/>
+  <path class="tw2" d="M122 78 l2.5 5.5 5.5 2.5 -5.5 2.5 -2.5 5.5 -2.5 -5.5 -5.5 -2.5 5.5 -2.5 z" fill="rgba(255,255,255,.55)"/>
+  <path class="tw3" d="M70 90 l2 4.5 4.5 2 -4.5 2 -2 4.5 -2 -4.5 -4.5 -2 4.5 -2 z" fill="rgba(255,255,255,.5)"/>
 </svg>"""
 
 CUSTOM_CSS = """<style>
 .block-container { padding-top: 1.4rem; max-width: 900px; }
 
 /* ── 黑板首页 ── */
-.board { background: linear-gradient(160deg, #33604F 0%, #24463B 100%);
+.board { position: relative; overflow: hidden;
+        background: linear-gradient(160deg, #33604F 0%, #24463B 100%);
         border: 10px solid #8B5E3C; border-radius: 16px;
         padding: 26px 30px; color: #F7F3E8;
         box-shadow: 0 10px 26px rgba(36,70,59,.35), inset 0 0 70px rgba(0,0,0,.25); }
-.board-inner { display: flex; gap: 28px; align-items: center; }
-.board-char { width: 168px; flex-shrink: 0; filter: drop-shadow(0 5px 10px rgba(0,0,0,.35)); }
-.board-char svg { width: 100%; height: auto; display: block; }
+.board-doodles { position: absolute; inset: 0; pointer-events: none; }
+.doodle-tl { position: absolute; top: 10px; left: 14px; width: 110px; opacity: .8; }
+.doodle-br { position: absolute; bottom: 2px; right: 10px; width: 92px; opacity: .55; }
+.board-inner { position: relative; display: flex; gap: 26px; align-items: center; }
+.board-char { width: 190px; flex-shrink: 0; filter: drop-shadow(0 5px 10px rgba(0,0,0,.35)); }
+.board-char svg { width: 100%; height: auto; display: block; animation: bob 3.6s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.wave-arm { transform-box: view-box; transform-origin: 142px 175px; animation: wave 1.8s ease-in-out infinite; }
+@keyframes wave { 0%,100% { transform: rotate(7deg); } 50% { transform: rotate(-17deg); } }
+.tw1 { animation: twinkle 2.2s ease-in-out infinite .2s; }
+.tw2 { animation: twinkle 2.8s ease-in-out infinite 1s; }
+.tw3 { animation: twinkle 2.5s ease-in-out infinite 1.6s; }
+@keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: .9; } }
 .board-hello { font-family: "KaiTi","STKaiti","楷体",serif;
         font-size: 1.75rem; font-weight: 700; letter-spacing: 2px; }
 .board-msg { font-family: "KaiTi","STKaiti","楷体",serif;
@@ -71,8 +139,10 @@ CUSTOM_CSS = """<style>
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) {
         background: #FFF6DE; border: 1.5px dashed #E4C878; }
 
-/* ── 侧边栏 ── */
+/* ── 侧边栏(静默版形象,不做动画)── */
 [data-testid="stSidebar"] { background: #FBF7EF; }
+.side-mascot svg { animation: none; }
+.side-mascot .wave-arm { animation: none; }
 .side-mascot { display: flex; align-items: center; gap: 12px; background: #fff;
         border-radius: 16px; padding: 12px; border: 1px solid #EADFC8; margin-bottom: 14px;
         box-shadow: 0 2px 8px rgba(90,70,52,.06); }
@@ -89,10 +159,11 @@ footer { visibility: hidden; }
 
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# ── 黑板首页:苏老师进入系统即打招呼 ──
+# ── 黑板首页:苏老师进入系统即挥手打招呼 ──
 st.markdown(
     f"""
 <div class="board">
+  <div class="board-doodles"><div class="doodle-tl">{DOODLE_TL}</div><div class="doodle-br">{DOODLE_BR}</div></div>
   <div class="board-inner">
     <div class="board-char">{TEACHER_SVG}</div>
     <div>
