@@ -79,12 +79,19 @@ streamlit run app.py
 
 浏览器会自动打开 `http://localhost:8501`,输入问题即可提问,例如:"什么是三次握手?为什么需要三次?"
 
+也可以不启动浏览器,用命令行快速自测整条链路:
+
+```bash
+python query.py "什么是三次握手?为什么需要三次?"
+```
+
 ## 📁 项目结构
 
 ```
 course-rag-qa/
 ├── app.py                  # Streamlit 聊天界面
 ├── ingest.py               # 知识库构建入口(加载→切分→向量化→持久化)
+├── query.py                # 命令行问答自测(不启动浏览器)
 ├── config.py               # 模型与检索参数配置
 ├── rag/
 │   ├── loader.py           # 文档加载与文本切分
