@@ -36,6 +36,24 @@
 - **🔒 本地化 Embedding**:中文向量化使用开源模型 `bge-small-zh-v1.5`,在本地运行,课件不出本机。
 - **🧵 对话式交互**:多轮提问、历史记录、一键清空、Student/Teacher 双气泡样式。
 
+## 📸 运行效果
+
+**进入系统,苏老师在黑板前挥手打招呼**——性格标签立住人设,三张问题卡一键开讲:
+
+<p align="center"><img src="assets/01-home.png" alt="苏老师首页打招呼" width="820"></p>
+
+**问苏老师**:回答严格依据课件,附引用来源,资料外明确回答"未涉及":
+
+<p align="center"><img src="assets/04-chat-sources.png" alt="课程问答与引用来源" width="640"></p>
+
+**期末考点预测**:选择学校题型(可补充考试范围说明):
+
+<p align="center"><img src="assets/02-exam-config.png" alt="考点预测配置" width="820"></p>
+
+**生成《期末考试重点与题型预测报告》**:各章出题概率、主考题型与复习时间分配:
+
+<p align="center"><img src="assets/03-exam-report.png" alt="考点预测报告" width="560"></p>
+
 ## ⛓️ 基于 LangChain 框架的实现(核心)
 
 本项目**严格按照实验要求,基于 LangChain 框架**构建(基于 LangChain 1.x,LCEL 表达式链)。系统的两条核心链路——课程问答与考点预测——都由 LangChain 组件组装而成:
